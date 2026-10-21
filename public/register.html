@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>Register - TCBS</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-50 flex justify-center pt-20">
+<form id="registerForm" class="bg-white p-8 rounded shadow w-full max-w-md space-y-4">
+<h1 class="text-2xl font-bold">Join TCBS</h1>
+<input id="name" placeholder="Full Name" required class="w-full border p-2 rounded">
+<input id="email" type="email" placeholder="Email" required class="w-full border p-2 rounded">
+<input id="password" type="password" placeholder="Password" required class="w-full border p-2 rounded">
+<select id="role" class="w-full border p-2 rounded">
+<option value="student">Student</option>
+<option value="teacher">Teacher</option>
+</select>
+<button type="submit" class="w-full bg-blue-600 text-white p-2 rounded">Create Account</button>
+</form>
+<script type="module">
+import { supabase } from './supabase-client.js'
+document.getElementById('registerForm').addEventListener('submit', async (e)=>{
+ e.preventDefault()
+ const full_name=document.getElementById('name').value
+ const email=document.getElementById('email').value
+ const password=document.getElementById('password').value
+ const selectedRole = document.getElementById('role').value // 'teacher' or 'student'
+const { data, error } = await supabase.auth.signUp({ email, password, options:{ data:{ full_name, role:selectedRole }}})
+if(error) return alert(error.message)
+
+// Also create profile immediately so admin sees it
+await supabase.from('user_profiles').insert({ id:data.user.id, email, full_name, role:selectedRole })
+
+if(selectedRole === 'teacher'){
+  await supabase.from('teachers').insert({ user_id:data.user.id, email, full_name, status:'pending' })
+} else {
+  await supabase.from('students').insert({ user_id:data.user.id, email, full_name, status:'pending' })
+}
+ alert('Account created! Wait for admin approval. Then you can login at /index.html')
+})
+</script>
+</body>
+</html>
